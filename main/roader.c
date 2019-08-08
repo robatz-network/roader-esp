@@ -10,13 +10,13 @@
 #define AUTO_FLUSH_INTERVAL 15000
 
 static void flush_data_task(void *pvParameters);
-void app_nvs_flash_init();
+void app_nvs_flash_initialize();
 
 void app_main()
 {
 
-    app_nvs_flash_init();
-    app_wifi_initialise();
+    app_nvs_flash_initialize();
+    app_wifi_initialize();
     app_adc_initialize();
 
     xTaskCreate(&flush_data_task, "flush_data_task", 8192, NULL, 5, NULL);
@@ -57,7 +57,7 @@ static void flush_data_task(void *pvParameters)
     // vTaskDelete(NULL);
 }
 
-void app_nvs_flash_init()
+void app_nvs_flash_initialize()
 {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
