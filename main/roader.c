@@ -1,6 +1,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
+#include "esp_timer.h"
 
 #include "app_wifi.h"
 #include "app_http_client.h"
@@ -11,14 +12,16 @@ static void http_post_task(void *pvParameters)
     for (;;)
     {
         app_wifi_start();
-        uint32_t voltage = read_adc();
 
         if (app_wifi_wait_connected())
         {
+            uint32_t voltage = read_adc();
             char buff[50];
             char macStr[19] = {0};
+            unsigned long time = esp_timer_get_time() / 1000ULL;
+
             ESP_ERROR_CHECK(app_wifi_get_mac(macStr));
-            sprintf(buff, "voltage %s %dmV", macStr, voltage);
+            sprintf(buff, "voltage %s %dmV %ld", macStr, voltage, time);
             http_post(buff);
         }
 
