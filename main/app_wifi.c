@@ -10,13 +10,10 @@
 
 static const char *TAG = "WIFI";
 
-/* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
 
-/* The event group allows multiple bits for each event,
-   but we only care about one event - are we connected
-   to the AP with an IP? */
 const int CONNECTED_BIT = BIT0;
+const int DISCONNECTED_BIT = BIT1;
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -29,7 +26,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
-        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
+        xEventGroupSetBits(wifi_event_group, DISCONNECTED_BIT);
         break;
     default:
         break;
@@ -69,14 +66,16 @@ void app_wifi_stop()
 bool app_wifi_wait_connected()
 {
     EventBits_t ux_bits;
-    ux_bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, false, true, pdMS_TO_TICKS(5000));
+    unsigned long timeout = pdMS_TO_TICKS(5000);
+    ux_bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT | DISCONNECTED_BIT, true, false, timeout);
 
     return ((ux_bits & CONNECTED_BIT) != 0);
 }
 
-void app_wifi_get_mac(char *macStr)
+esp_err_t app_wifi_get_mac(char *macStr)
 {
     uint8_t mac[6];
-    esp_wifi_get_mac(WIFI_IF_STA, mac);
+    esp_err_t err = esp_wifi_get_mac(WIFI_IF_STA, mac);
     sprintf(macStr, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    return err;
 }

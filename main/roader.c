@@ -17,7 +17,7 @@ static void http_post_task(void *pvParameters)
         {
             char buff[50];
             char macStr[19] = {0};
-            app_wifi_get_mac(macStr);
+            ESP_ERROR_CHECK(app_wifi_get_mac(macStr));
             sprintf(buff, "voltage %s %dmV", macStr, voltage);
             http_post(buff);
         }
