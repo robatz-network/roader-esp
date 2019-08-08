@@ -7,7 +7,7 @@
 
 static const char *TAG = "HTTP_CLIENT";
 
-void http_post(const char data[])
+int http_post(const char data[])
 {
   esp_http_client_config_t config = {
       .url = "http://roader.herokuapp.com/api/devices/flush",
@@ -20,15 +20,11 @@ void http_post(const char data[])
   esp_http_client_set_post_field(client, post_data, strlen(post_data));
   esp_http_client_set_header(client, "Content-Type", "text/plain");
   esp_err_t err = esp_http_client_perform(client);
-  if (err == ESP_OK)
-  {
-    ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %d",
-             esp_http_client_get_status_code(client),
-             esp_http_client_get_content_length(client));
-  }
-  else
+  if (err != ESP_OK)
   {
     ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
   }
+  int status_code = esp_http_client_get_status_code(client);
   esp_http_client_cleanup(client);
+  return status_code;
 }
