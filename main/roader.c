@@ -1,18 +1,32 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
-#include "esp_log.h"
 
 #include "app_wifi.h"
 #include "app_http_client.h"
+#include "app_adc.h"
 
 static void http_post_task(void *pvParameters)
 {
-    app_wifi_start();
-    app_wifi_wait_connected();
-    http_post("Hello!!!");
-    app_wifi_stop();
-    vTaskDelete(NULL);
+    for (;;)
+    {
+        app_wifi_start();
+        uint32_t voltage = read_adc();
+
+        if (app_wifi_wait_connected())
+        {
+            char buff[50];
+            char macStr[19] = {0};
+            app_wifi_get_mac(macStr);
+            sprintf(buff, "voltage %s %dmV", macStr, voltage);
+            http_post(buff);
+        }
+
+        app_wifi_stop();
+        vTaskDelay(pdMS_TO_TICKS(15000));
+    }
+
+    // vTaskDelete(NULL);
 }
 
 void app_main()
@@ -26,6 +40,7 @@ void app_main()
     ESP_ERROR_CHECK(ret);
 
     app_wifi_initialise();
+    app_adc_initialize();
 
     xTaskCreate(&http_post_task, "http_post_task", 8192, NULL, 5, NULL);
 }

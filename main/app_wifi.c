@@ -29,7 +29,6 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
-        esp_wifi_connect();
         xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
         break;
     default:
@@ -67,7 +66,17 @@ void app_wifi_stop()
     ESP_ERROR_CHECK(esp_wifi_stop());
 }
 
-void app_wifi_wait_connected()
+bool app_wifi_wait_connected()
 {
-    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
+    EventBits_t ux_bits;
+    ux_bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, false, true, pdMS_TO_TICKS(5000));
+
+    return ((ux_bits & CONNECTED_BIT) != 0);
+}
+
+void app_wifi_get_mac(char *macStr)
+{
+    uint8_t mac[6];
+    esp_wifi_get_mac(WIFI_IF_STA, mac);
+    sprintf(macStr, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
